@@ -1,3 +1,16 @@
+const EMOJI_LIST = [
+  '🛒','🍔','🍕','🍣','🥗','🌮','☕','🍺','🥂','🍰','🧁','🍜',
+  '🚌','🚗','🚇','✈️','⛽','🛵','🚲','🚕','🛳️','🚂',
+  '🏠','🏡','💡','🛋️','🔧','🪴','🛁','🔑','📦',
+  '💊','🏥','🏃','💪','🧘','🩺','🥗','🧴',
+  '🎮','🎬','🎵','📚','🎨','⚽','🏔️','🎭','🎤','🏋️',
+  '🛍️','👗','👟','💄','💍','🕶️','👜',
+  '💰','💳','💵','🏦','📈','💹','🪙',
+  '📱','💻','📺','🖥️','🎧','⌚','📷',
+  '🌿','🐶','🐱','☀️','🌙','🌊','🏕️',
+  '🎁','🎓','✂️','🔑','🧳','🎪','🎠',
+];
+
 function budgetApp() {
   return {
     loading: true,
@@ -33,6 +46,12 @@ function budgetApp() {
     txSearch: '',
     txGrouped: [],
 
+    // Swipe-to-delete state
+    swipeOffsets: {},
+    swipeStartX: 0,
+    swipeBaseOffset: 0,
+    swipingId: null,
+
     // Reports
     rptPeriod: 'month',
     rptTab: 'category',
@@ -52,24 +71,22 @@ function budgetApp() {
       monthOfYear: new Date().getMonth() + 1, autoLog: false,
     },
 
-    // Settings
-    showAddCategory: false,
-    newCat: { name: '', icon: '📦', color: '#e94560' },
+    // Category add/edit
+    editCatForm: null,
+    showEmojiPicker: false,
 
     // ── Init ──────────────────────────────────────────────────────────────────
 
     async init() {
       await DB.seed();
       await this._loadMasterData();
+      this._applyTheme(this.settings.theme || 'dark');
       await this.loadDashboard();
 
       this.$watch('currentView', async view => {
         if (view === 'transactions') await this.loadTransactions();
         if (view === 'recurring') await this.loadRecurring();
-        if (view === 'reports') {
-          // Delay so x-show has time to make canvas visible
-          requestAnimationFrame(() => this.loadReports());
-        }
+        if (view === 'reports') requestAnimationFrame(() => this.loadReports());
       });
 
       if ('serviceWorker' in navigator) {
@@ -90,6 +107,19 @@ function budgetApp() {
       this.recurringForm.currency = defaultCurrency;
     },
 
+    // ── Theme ─────────────────────────────────────────────────────────────────
+
+    _applyTheme(theme) {
+      document.documentElement.setAttribute('data-theme', theme);
+      this.settings.theme = theme;
+    },
+
+    async toggleTheme() {
+      const next = this.settings.theme === 'dark' ? 'light' : 'dark';
+      this._applyTheme(next);
+      await DB.put('settings', this.settings);
+    },
+
     // ── Currency ──────────────────────────────────────────────────────────────
 
     toCHF(amount, currency) {
@@ -104,10 +134,6 @@ function budgetApp() {
 
     fmtCHF(amount) {
       return `CHF ${Math.abs(amount).toFixed(2)}`;
-    },
-
-    get popularCurrencies() {
-      return ['CHF', 'EUR', 'USD', 'GBP', 'JPY', 'CAD', 'AUD', 'CNY'];
     },
 
     get allCurrencies() {
@@ -128,6 +154,42 @@ function budgetApp() {
         || { name: 'Unknown', icon: '📦', color: '#9E9E9E' };
     },
 
+    get usedEmojis() {
+      const editingId = this.editCatForm?.id;
+      return new Set(this.categories.filter(c => c.id !== editingId).map(c => c.icon));
+    },
+
+    get availableEmojis() {
+      return EMOJI_LIST.filter(e => !this.usedEmojis.has(e));
+    },
+
+    openCatForm(cat = null) {
+      this.showEmojiPicker = false;
+      this.editCatForm = cat
+        ? { ...cat }
+        : { id: null, name: '', icon: '💡', color: '#6366f1', isDefault: false, order: this.categories.length + 1 };
+    },
+
+    async saveCatForm() {
+      if (!this.editCatForm?.name.trim()) return;
+      const cat = {
+        ...this.editCatForm,
+        id: this.editCatForm.id || DB.genId('cat'),
+        name: this.editCatForm.name.trim(),
+      };
+      await DB.put('categories', cat);
+      this.categories = (await DB.getAll('categories')).sort((a, b) => a.order - b.order);
+      this.editCatForm = null;
+      this.showEmojiPicker = false;
+    },
+
+    async deleteCategory(cat) {
+      if (cat.isDefault) return;
+      if (!confirm(`Delete "${cat.name}"?`)) return;
+      await DB.delete('categories', cat.id);
+      this.categories = (await DB.getAll('categories')).sort((a, b) => a.order - b.order);
+    },
+
     // ── Add / Edit form ───────────────────────────────────────────────────────
 
     openAddModal(expense = null) {
@@ -146,15 +208,10 @@ function budgetApp() {
         };
       } else {
         this.form = {
-          id: null,
-          type: 'expense',
-          amount: '',
+          id: null, type: 'expense', amount: '',
           currency: this.settings.defaultCurrency || 'CHF',
-          name: '',
-          categoryId: this.categories[0]?.id || 'cat_food',
-          date: today,
-          note: '',
-          showNote: false,
+          name: '', categoryId: this.categories[0]?.id || 'cat_food',
+          date: today, note: '', showNote: false,
         };
       }
       this.showCurrencyPicker = false;
@@ -173,15 +230,11 @@ function budgetApp() {
       const amountCHF = Math.round(this.toCHF(amount, this.form.currency) * 100) / 100;
       const entry = {
         id: this.form.id || DB.genId(this.form.type === 'income' ? 'inc' : 'exp'),
-        amount,
-        currency: this.form.currency,
-        amountCHF,
+        amount, currency: this.form.currency, amountCHF,
         name: this.form.name.trim(),
         categoryId: this.form.type === 'income' ? '_income' : this.form.categoryId,
-        date: this.form.date,
-        note: this.form.note.trim(),
-        recurringId: null,
-        type: this.form.type,
+        date: this.form.date, note: this.form.note.trim(),
+        recurringId: null, type: this.form.type,
       };
 
       await DB.put('expenses', entry);
@@ -189,15 +242,49 @@ function budgetApp() {
       await this._refreshCurrentView();
     },
 
-    async deleteExpense(id) {
-      if (!confirm('Delete this entry?')) return;
+    async deleteExpense(id, noConfirm = false) {
+      if (!noConfirm && !confirm('Delete this entry?')) return;
       await DB.delete('expenses', id);
+      if (this.swipeOffsets[id] !== undefined) this.swipeOffsets[id] = 0;
       await this._refreshCurrentView();
     },
 
     async _refreshCurrentView() {
       if (this.currentView === 'dashboard') await this.loadDashboard();
       if (this.currentView === 'transactions') await this.loadTransactions();
+    },
+
+    // ── Swipe to delete ───────────────────────────────────────────────────────
+
+    swipeStart(id, e) {
+      if (this.swipingId && this.swipingId !== id) {
+        this.swipeOffsets[this.swipingId] = 0;
+      }
+      this.swipingId = id;
+      this.swipeStartX = e.touches[0].clientX;
+      this.swipeBaseOffset = this.swipeOffsets[id] || 0;
+    },
+
+    swipeMove(id, e) {
+      const dx = e.touches[0].clientX - this.swipeStartX;
+      this.swipeOffsets[id] = Math.max(-220, Math.min(0, this.swipeBaseOffset + dx));
+    },
+
+    swipeEnd(id) {
+      this.swipingId = null;
+      const offset = this.swipeOffsets[id] || 0;
+      if (offset < -180) {
+        this.swipeOffsets[id] = 0;
+        this.deleteExpense(id, true);
+      } else if (offset < -60) {
+        this.swipeOffsets[id] = -80;
+      } else {
+        this.swipeOffsets[id] = 0;
+      }
+    },
+
+    resetSwipe(id) {
+      this.swipeOffsets[id] = 0;
     },
 
     // ── Dashboard ─────────────────────────────────────────────────────────────
@@ -231,9 +318,9 @@ function budgetApp() {
         else income += e.amountCHF;
       }
       this.dashStats = {
-        spent: Math.round(spent * 100) / 100,
+        spent:  Math.round(spent  * 100) / 100,
         income: Math.round(income * 100) / 100,
-        net: Math.round((income - spent) * 100) / 100,
+        net:    Math.round((income - spent) * 100) / 100,
       };
       this.recentTx = [...entries]
         .sort((a, b) => b.date.localeCompare(a.date) || b.id.localeCompare(a.id))
@@ -266,6 +353,7 @@ function budgetApp() {
     },
 
     async loadTransactions() {
+      this.swipeOffsets = {};
       const pad = n => String(n).padStart(2, '0');
       let entries = await DB.getByDateRange(
         `${this.txYear}-${pad(this.txMonth)}-01`,
@@ -332,16 +420,10 @@ function budgetApp() {
     async _doLogRecurring(rule) {
       const today = new Date().toISOString().split('T')[0];
       await DB.put('expenses', {
-        id: DB.genId('exp'),
-        amount: rule.amount,
-        currency: rule.currency,
+        id: DB.genId('exp'), amount: rule.amount, currency: rule.currency,
         amountCHF: Math.round(this.toCHF(rule.amount, rule.currency) * 100) / 100,
-        name: rule.name,
-        categoryId: rule.categoryId,
-        date: today,
-        note: 'Recurring',
-        recurringId: rule.id,
-        type: 'expense',
+        name: rule.name, categoryId: rule.categoryId, date: today,
+        note: 'Recurring', recurringId: rule.id, type: 'expense',
       });
       await DB.put('recurring', { ...rule, lastLoggedDate: today });
     },
@@ -391,10 +473,8 @@ function budgetApp() {
       const rule = {
         ...this.recurringForm,
         id: this.recurringForm.id || DB.genId('rec'),
-        amount,
-        name: this.recurringForm.name.trim(),
-        active: true,
-        lastLoggedDate: this.recurringForm.lastLoggedDate || null,
+        amount, name: this.recurringForm.name.trim(),
+        active: true, lastLoggedDate: this.recurringForm.lastLoggedDate || null,
       };
       await DB.put('recurring', rule);
       this.showAddRecurring = false;
@@ -426,9 +506,7 @@ function budgetApp() {
       if (this.rptPeriod === 'month') {
         if (this.rptMonth === 1) { this.rptYear--; this.rptMonth = 12; }
         else this.rptMonth--;
-      } else if (this.rptPeriod === 'year') {
-        this.rptYear--;
-      }
+      } else if (this.rptPeriod === 'year') { this.rptYear--; }
       requestAnimationFrame(() => this.loadReports());
     },
 
@@ -436,9 +514,7 @@ function budgetApp() {
       if (this.rptPeriod === 'month') {
         if (this.rptMonth === 12) { this.rptYear++; this.rptMonth = 1; }
         else this.rptMonth++;
-      } else if (this.rptPeriod === 'year') {
-        this.rptYear++;
-      }
+      } else if (this.rptPeriod === 'year') { this.rptYear++; }
       requestAnimationFrame(() => this.loadReports());
     },
 
@@ -475,8 +551,7 @@ function budgetApp() {
     },
 
     async _rptCategory(expenses) {
-      const groups = {};
-      let total = 0;
+      const groups = {}; let total = 0;
       for (const e of expenses) {
         groups[e.categoryId] = (groups[e.categoryId] || 0) + e.amountCHF;
         total += e.amountCHF;
@@ -485,11 +560,9 @@ function budgetApp() {
         .sort(([, a], [, b]) => b - a)
         .map(([id, sum]) => {
           const cat = this.getCat(id);
-          return {
-            id, name: cat.name, icon: cat.icon, color: cat.color,
+          return { id, name: cat.name, icon: cat.icon, color: cat.color,
             total: Math.round(sum * 100) / 100,
-            percent: total > 0 ? Math.round((sum / total) * 100) : 0,
-          };
+            percent: total > 0 ? Math.round((sum / total) * 100) : 0 };
         });
       await this.$nextTick();
       Charts.renderCategory('categoryChart', this.categoryData);
@@ -497,25 +570,25 @@ function budgetApp() {
 
     async _rptTime(entries) {
       const expenses = entries.filter(e => e.type === 'expense');
-      const income = entries.filter(e => e.type === 'income');
+      const income   = entries.filter(e => e.type === 'income');
       let labels, expData, incData;
 
       if (this.rptPeriod === 'year') {
         labels = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
         expData = Array(12).fill(0); incData = Array(12).fill(0);
         for (const e of expenses) expData[parseInt(e.date.split('-')[1]) - 1] += e.amountCHF;
-        for (const e of income) incData[parseInt(e.date.split('-')[1]) - 1] += e.amountCHF;
+        for (const e of income)   incData[parseInt(e.date.split('-')[1]) - 1] += e.amountCHF;
       } else if (this.rptPeriod === 'month') {
         const days = new Date(this.rptYear, this.rptMonth, 0).getDate();
         labels = Array.from({ length: days }, (_, i) => String(i + 1));
         expData = Array(days).fill(0); incData = Array(days).fill(0);
         for (const e of expenses) expData[parseInt(e.date.split('-')[2]) - 1] += e.amountCHF;
-        for (const e of income) incData[parseInt(e.date.split('-')[2]) - 1] += e.amountCHF;
+        for (const e of income)   incData[parseInt(e.date.split('-')[2]) - 1] += e.amountCHF;
       } else {
         labels = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
         expData = Array(7).fill(0); incData = Array(7).fill(0);
         for (const e of expenses) expData[(dayjs(e.date).day() + 6) % 7] += e.amountCHF;
-        for (const e of income) incData[(dayjs(e.date).day() + 6) % 7] += e.amountCHF;
+        for (const e of income)   incData[(dayjs(e.date).day() + 6) % 7] += e.amountCHF;
       }
 
       expData = expData.map(v => Math.round(v * 100) / 100);
@@ -536,39 +609,49 @@ function budgetApp() {
       Charts.renderWeekday('weekdayChart', { labels, data });
     },
 
+    // ── Backup & Restore ──────────────────────────────────────────────────────
+
+    async downloadBackup() {
+      const data = await DB.exportAll();
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url  = URL.createObjectURL(blob);
+      const a    = Object.assign(document.createElement('a'), {
+        href: url,
+        download: `budget-backup-${new Date().toISOString().split('T')[0]}.json`,
+      });
+      a.click();
+      URL.revokeObjectURL(url);
+    },
+
+    async restoreBackup(file) {
+      if (!file) return;
+      if (!confirm('This will replace ALL your data with the backup. Continue?')) return;
+      try {
+        const text = await file.text();
+        const data = JSON.parse(text);
+        if (!data.version || !Array.isArray(data.expenses)) {
+          alert('Invalid backup file.'); return;
+        }
+        await DB.importAll(data);
+        await this._loadMasterData();
+        this._applyTheme(this.settings.theme || 'dark');
+        await this.loadDashboard();
+        alert('Restore complete.');
+      } catch {
+        alert('Failed to restore. The file may be corrupted.');
+      }
+    },
+
     // ── Settings ──────────────────────────────────────────────────────────────
 
     async saveSettings() {
       await DB.put('settings', this.settings);
     },
 
-    async addCategory() {
-      if (!this.newCat.name.trim()) return;
-      const cat = {
-        id: DB.genId('cat'),
-        name: this.newCat.name.trim(),
-        icon: this.newCat.icon || '📦',
-        color: this.newCat.color || '#9E9E9E',
-        isDefault: false,
-        order: this.categories.length + 1,
-      };
-      await DB.put('categories', cat);
-      this.categories = (await DB.getAll('categories')).sort((a, b) => a.order - b.order);
-      this.newCat = { name: '', icon: '📦', color: '#e94560' };
-      this.showAddCategory = false;
-    },
-
-    async deleteCategory(cat) {
-      if (cat.isDefault) return;
-      if (!confirm(`Delete "${cat.name}"?`)) return;
-      await DB.delete('categories', cat.id);
-      this.categories = (await DB.getAll('categories')).sort((a, b) => a.order - b.order);
-    },
-
     async updateRates() {
       this.ratesUpdating = true;
       try {
-        const res = await fetch('https://open.er-api.com/v6/latest/CHF');
+        const res  = await fetch('https://open.er-api.com/v6/latest/CHF');
         const json = await res.json();
         if (json.result === 'success') {
           await DB.put('exchangeRates', {

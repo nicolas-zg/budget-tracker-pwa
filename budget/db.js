@@ -72,6 +72,31 @@ const DB = {
     return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
   },
 
+  async exportAll() {
+    return {
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      expenses:      await this.getAll('expenses'),
+      categories:    await this.getAll('categories'),
+      recurring:     await this.getAll('recurring'),
+      exchangeRates: await this.getAll('exchangeRates'),
+      settings:      await this.getAll('settings'),
+    };
+  },
+
+  async importAll(data) {
+    for (const store of ['expenses', 'categories', 'recurring', 'exchangeRates', 'settings']) {
+      const db = await this.open();
+      await new Promise((res, rej) => {
+        const tx = db.transaction(store, 'readwrite');
+        const req = tx.objectStore(store).clear();
+        req.onsuccess = res;
+        tx.onerror = () => rej(tx.error);
+      });
+      for (const record of (data[store] || [])) await this.put(store, record);
+    }
+  },
+
   async seed() {
     const cats = await this.getAll('categories');
     if (!cats.length) {

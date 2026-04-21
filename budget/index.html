@@ -1,299 +1,251 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="theme-color" content="#1a1a2e">
+  <meta name="theme-color" content="#0f0f0f">
   <link rel="manifest" href="manifest.json">
   <title>Budget</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     [x-cloak] { display: none !important; }
 
-    :root {
-      --bg: #1a1a2e;
-      --card: #16213e;
-      --raised: #0f3460;
-      --accent: #e94560;
-      --green: #4CAF50;
-      --text: #eeeeee;
-      --muted: #a8a8b3;
-      --border: rgba(255,255,255,0.08);
-      --radius: 14px;
-      --safe-b: env(safe-area-inset-bottom, 0px);
-      --safe-t: env(safe-area-inset-top, 0px);
+    /* ── Themes ── */
+    html, html[data-theme="dark"] {
+      --bg:         #0f0f0f;
+      --card:       #1c1c1e;
+      --raised:     #2c2c2e;
+      --border:     rgba(255,255,255,0.08);
+      --accent:     #6366f1;
+      --accent-dim: rgba(99,102,241,0.15);
+      --green:      #22c55e;
+      --red:        #f87171;
+      --text:       #f5f5f5;
+      --muted:      #8e8e93;
+      --shadow:     rgba(0,0,0,0.4);
+    }
+    html[data-theme="light"] {
+      --bg:         #f2f2f7;
+      --card:       #ffffff;
+      --raised:     #e5e5ea;
+      --border:     rgba(0,0,0,0.08);
+      --accent:     #6366f1;
+      --accent-dim: rgba(99,102,241,0.1);
+      --green:      #16a34a;
+      --red:        #dc2626;
+      --text:       #111827;
+      --muted:      #6b7280;
+      --shadow:     rgba(0,0,0,0.08);
     }
 
+    /* ── Base ── */
     html, body { height: 100%; background: var(--bg); color: var(--text); font-family: -apple-system, 'Segoe UI', sans-serif; overflow: hidden; }
-
-    #app { display: flex; flex-direction: column; height: 100%; padding-top: var(--safe-t); }
+    #app { display: flex; flex-direction: column; height: 100%; padding-top: env(safe-area-inset-top, 0px); }
 
     /* ── Views ── */
-    .view { flex: 1; overflow-y: auto; padding-bottom: calc(70px + var(--safe-b)); display: none; }
+    .view { flex: 1; overflow-y: auto; padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px)); display: none; }
     .view.active { display: block; }
-
     .view-header {
-      position: sticky; top: 0; z-index: 10;
-      background: var(--bg); padding: 1rem 1rem 0.75rem;
+      position: sticky; top: 0; z-index: 10; background: var(--bg);
+      padding: 1rem 1rem 0.75rem;
       display: flex; align-items: center; justify-content: space-between;
       border-bottom: 1px solid var(--border);
     }
-    .view-header h1 { font-size: 1.3rem; font-weight: 700; }
-    .view-header .month-nav { display: flex; align-items: center; gap: 0.5rem; }
-    .view-header .month-nav button {
-      background: var(--card); border: none; color: var(--text);
-      width: 32px; height: 32px; border-radius: 50%; font-size: 1rem; cursor: pointer;
-    }
-    .view-header .month-nav span { font-size: 0.9rem; color: var(--muted); min-width: 110px; text-align: center; }
+    .view-header h1 { font-size: 1.25rem; font-weight: 700; letter-spacing: -0.3px; }
+    .month-nav { display: flex; align-items: center; gap: 0.4rem; }
+    .month-nav button { background: var(--raised); border: none; color: var(--text); width: 30px; height: 30px; border-radius: 50%; font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+    .month-nav span { font-size: 0.82rem; color: var(--muted); min-width: 108px; text-align: center; }
 
     /* ── Bottom nav ── */
     .bottom-nav {
       position: fixed; bottom: 0; left: 0; right: 0; z-index: 20;
       background: var(--card); border-top: 1px solid var(--border);
       display: flex; align-items: center; justify-content: space-around;
-      padding: 0.5rem 0 calc(0.5rem + var(--safe-b));
+      padding: 0.4rem 0 calc(0.4rem + env(safe-area-inset-bottom, 0px));
     }
-    .nav-btn {
-      flex: 1; display: flex; flex-direction: column; align-items: center;
-      gap: 2px; background: none; border: none; color: var(--muted);
-      font-size: 0.65rem; cursor: pointer; padding: 0.35rem 0; min-height: 44px;
-      transition: color 0.15s;
-    }
-    .nav-btn .icon { font-size: 1.4rem; line-height: 1; }
+    .nav-btn { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; background: none; border: none; color: var(--muted); font-size: 0.62rem; cursor: pointer; padding: 0.3rem 0; min-height: 48px; transition: color 0.15s; }
+    .nav-btn svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
     .nav-btn.active { color: var(--accent); }
-    .nav-btn.add-btn {
-      flex: 0 0 56px;
-    }
-    .nav-btn.add-btn .icon {
-      width: 48px; height: 48px; background: var(--accent);
-      border-radius: 50%; font-size: 1.6rem; display: flex;
-      align-items: center; justify-content: center; color: #fff;
-      box-shadow: 0 4px 12px rgba(233,69,96,0.4);
-    }
+    .nav-btn.add-btn { flex: 0 0 56px; }
+    .nav-btn.add-btn .add-circle { width: 46px; height: 46px; background: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(99,102,241,0.45); }
+    .nav-btn.add-btn svg { width: 24px; height: 24px; stroke: #fff; stroke-width: 2.5; }
 
-    /* ── Cards ── */
-    .card { background: var(--card); border-radius: var(--radius); padding: 1rem; }
+    /* ── Cards & sections ── */
     .section { padding: 1rem; }
-    .section-title { font-size: 0.75rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.75rem; }
+    .section-title { font-size: 0.7rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.6rem; }
 
-    /* ── Stats grid ── */
-    .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; padding: 1rem 1rem 0; }
-    .stat-card { background: var(--card); border-radius: var(--radius); padding: 1rem; }
-    .stat-card .label { font-size: 0.75rem; color: var(--muted); margin-bottom: 0.3rem; }
-    .stat-card .value { font-size: 1.4rem; font-weight: 700; }
-    .stat-card.spent .value { color: var(--accent); }
+    /* ── Stats ── */
+    .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; padding: 0.75rem 1rem 0; }
+    .stat-card { background: var(--card); border-radius: 16px; padding: 1rem; }
+    .stat-card .label { font-size: 0.72rem; color: var(--muted); margin-bottom: 0.25rem; font-weight: 500; }
+    .stat-card .value { font-size: 1.3rem; font-weight: 700; letter-spacing: -0.5px; }
+    .stat-card.spent .value { color: var(--red); }
     .stat-card.income .value { color: var(--green); }
-    .net-card { margin: 0.75rem 1rem 0; background: var(--card); border-radius: var(--radius); padding: 1rem; }
-    .net-card .row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem; }
-    .net-card .net-label { font-size: 0.85rem; color: var(--muted); }
-    .net-card .net-value { font-size: 1.1rem; font-weight: 700; }
+    .net-card { margin: 0.6rem 1rem 0; background: var(--card); border-radius: 16px; padding: 1rem; }
+    .net-card .row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
+    .net-card .net-label { font-size: 0.82rem; color: var(--muted); }
+    .net-card .net-value { font-size: 1.05rem; font-weight: 700; letter-spacing: -0.3px; }
     .net-card .net-value.positive { color: var(--green); }
-    .net-card .net-value.negative { color: var(--accent); }
-    .progress-bar { height: 6px; background: var(--raised); border-radius: 3px; overflow: hidden; }
+    .net-card .net-value.negative { color: var(--red); }
+    .progress-bar { height: 5px; background: var(--raised); border-radius: 3px; overflow: hidden; }
     .progress-fill { height: 100%; border-radius: 3px; transition: width 0.4s; }
+    .progress-sub { font-size: 0.68rem; color: var(--muted); margin-top: 0.3rem; text-align: right; }
 
     /* ── Banner ── */
-    .banner {
-      margin: 0.75rem 1rem 0;
-      background: rgba(233,69,96,0.12); border: 1px solid rgba(233,69,96,0.3);
-      border-radius: var(--radius); padding: 0.8rem 1rem;
-      display: flex; align-items: center; justify-content: space-between;
-    }
-    .banner span { font-size: 0.9rem; }
-    .banner button {
-      background: var(--accent); color: #fff; border: none;
-      border-radius: 8px; padding: 0.35rem 0.8rem; font-size: 0.8rem; cursor: pointer;
-    }
+    .banner { margin: 0.6rem 1rem 0; background: var(--accent-dim); border: 1px solid rgba(99,102,241,0.25); border-radius: 14px; padding: 0.75rem 1rem; display: flex; align-items: center; justify-content: space-between; }
+    .banner span { font-size: 0.875rem; }
+    .banner button { background: var(--accent); color: #fff; border: none; border-radius: 8px; padding: 0.3rem 0.75rem; font-size: 0.78rem; font-weight: 600; cursor: pointer; }
 
     /* ── Transaction items ── */
-    .tx-date-group { padding: 0 1rem 0.25rem; }
-    .tx-date-label { font-size: 0.75rem; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; padding: 0.75rem 0 0.35rem; }
-    .tx-item {
-      background: var(--card); border-radius: 12px; padding: 0.75rem 0.9rem;
-      display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;
-      cursor: pointer; transition: background 0.15s;
-    }
-    .tx-item:active { background: var(--raised); }
-    .tx-icon { font-size: 1.5rem; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; background: var(--raised); border-radius: 10px; flex-shrink: 0; }
+    .tx-date-group { padding: 0 0.75rem 0.25rem; }
+    .tx-date-label { font-size: 0.7rem; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; padding: 0.7rem 0.25rem 0.3rem; }
+
+    /* Swipe wrapper */
+    .swipe-wrapper { position: relative; overflow: hidden; border-radius: 14px; margin-bottom: 0.45rem; }
+    .swipe-delete-bg { position: absolute; right: 0; top: 0; bottom: 0; width: 80px; background: var(--red); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 0.78rem; font-weight: 600; cursor: pointer; border-radius: 14px; }
+
+    .tx-item { background: var(--card); padding: 0.7rem 0.85rem; display: flex; align-items: center; gap: 0.7rem; cursor: pointer; touch-action: pan-y; transition: transform 0.22s cubic-bezier(.32,.72,0,1); will-change: transform; }
+    .tx-item.is-swiping { transition: none; }
+    .tx-icon { font-size: 1.35rem; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; background: var(--raised); border-radius: 10px; flex-shrink: 0; }
     .tx-info { flex: 1; min-width: 0; }
-    .tx-name { font-size: 0.9rem; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .tx-cat { font-size: 0.75rem; color: var(--muted); margin-top: 1px; }
+    .tx-name { font-size: 0.875rem; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .tx-cat { font-size: 0.72rem; color: var(--muted); margin-top: 1px; }
     .tx-amt { text-align: right; flex-shrink: 0; }
-    .tx-amt .primary { font-size: 0.95rem; font-weight: 600; }
-    .tx-amt .secondary { font-size: 0.7rem; color: var(--muted); }
-    .tx-amt.expense .primary { color: var(--accent); }
+    .tx-amt .primary { font-size: 0.9rem; font-weight: 600; letter-spacing: -0.2px; }
+    .tx-amt .secondary { font-size: 0.68rem; color: var(--muted); }
+    .tx-amt.expense .primary { color: var(--red); }
     .tx-amt.income .primary { color: var(--green); }
-    .tx-del { background: none; border: none; color: var(--muted); font-size: 1.1rem; cursor: pointer; padding: 0.25rem; opacity: 0.6; }
-    .tx-del:hover { opacity: 1; color: var(--accent); }
 
     /* ── Filter bar ── */
-    .filter-bar { display: flex; gap: 0.5rem; padding: 0.75rem 1rem; }
-    .filter-btn {
-      padding: 0.35rem 0.9rem; border-radius: 20px; border: 1px solid var(--border);
-      background: none; color: var(--muted); font-size: 0.8rem; cursor: pointer;
-      transition: all 0.15s;
-    }
+    .filter-bar { display: flex; gap: 0.4rem; padding: 0.6rem 0.75rem; align-items: center; }
+    .filter-btn { padding: 0.3rem 0.8rem; border-radius: 20px; border: 1px solid var(--border); background: none; color: var(--muted); font-size: 0.78rem; cursor: pointer; transition: all 0.15s; white-space: nowrap; }
     .filter-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
-    .search-input {
-      flex: 1; background: var(--card); border: none; border-radius: 10px;
-      padding: 0.5rem 0.8rem; color: var(--text); font-size: 0.9rem;
-    }
+    .search-wrap { flex: 1; position: relative; }
+    .search-input { width: 100%; background: var(--card); border: none; border-radius: 10px; padding: 0.45rem 0.75rem; color: var(--text); font-size: 0.875rem; outline: none; }
     .search-input::placeholder { color: var(--muted); }
 
     /* ── Overlays / Sheets ── */
-    .overlay {
-      position: fixed; inset: 0; z-index: 50;
-      background: rgba(0,0,0,0.55); display: flex; align-items: flex-end;
-    }
-    .sheet {
-      width: 100%; background: var(--card);
-      border-radius: 20px 20px 0 0;
-      padding: 0 1rem calc(1.5rem + var(--safe-b));
-      max-height: 92vh; overflow-y: auto;
-      animation: slideUp 0.28s cubic-bezier(.32,.72,0,1);
-    }
+    .overlay { position: fixed; inset: 0; z-index: 50; background: rgba(0,0,0,0.5); display: flex; align-items: flex-end; }
+    .sheet { width: 100%; background: var(--card); border-radius: 22px 22px 0 0; padding: 0 1rem calc(1.5rem + env(safe-area-inset-bottom, 0px)); max-height: 92vh; overflow-y: auto; animation: slideUp 0.28s cubic-bezier(.32,.72,0,1); }
     @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-    .sheet-handle { width: 40px; height: 4px; background: var(--border); border-radius: 2px; margin: 0.75rem auto 1rem; }
-    .sheet-title { font-size: 1.1rem; font-weight: 700; text-align: center; margin-bottom: 1.25rem; }
+    .sheet-handle { width: 36px; height: 4px; background: var(--raised); border-radius: 2px; margin: 0.7rem auto 1rem; }
+    .sheet-title { font-size: 1.05rem; font-weight: 700; text-align: center; margin-bottom: 1.1rem; }
 
     /* ── Form elements ── */
-    .form-group { margin-bottom: 1rem; }
-    .form-label { font-size: 0.75rem; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.4rem; display: block; }
-    .form-input {
-      width: 100%; background: var(--raised); border: 1px solid var(--border);
-      border-radius: 12px; padding: 0.75rem 1rem; color: var(--text);
-      font-size: 1rem; outline: none;
-    }
+    .form-group { margin-bottom: 0.9rem; }
+    .form-label { font-size: 0.7rem; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 0.35rem; display: block; }
+    .form-input { width: 100%; background: var(--raised); border: 1px solid var(--border); border-radius: 12px; padding: 0.7rem 0.9rem; color: var(--text); font-size: 0.95rem; outline: none; }
     .form-input:focus { border-color: var(--accent); }
     .amount-row { display: flex; gap: 0.5rem; }
-    .amount-input {
-      flex: 1; background: var(--raised); border: 1px solid var(--border);
-      border-radius: 12px; padding: 0.75rem 1rem; color: var(--text);
-      font-size: 1.4rem; font-weight: 700; outline: none; text-align: right;
-    }
+    .amount-input { flex: 1; background: var(--raised); border: 1px solid var(--border); border-radius: 12px; padding: 0.7rem 0.9rem; color: var(--text); font-size: 1.5rem; font-weight: 700; outline: none; text-align: right; }
     .amount-input:focus { border-color: var(--accent); }
-    .currency-btn {
-      background: var(--raised); border: 1px solid var(--border);
-      border-radius: 12px; padding: 0.75rem 1rem; color: var(--text);
-      font-size: 0.9rem; font-weight: 600; cursor: pointer; min-width: 60px;
-    }
+    .currency-btn { background: var(--raised); border: 1px solid var(--border); border-radius: 12px; padding: 0.7rem 0.9rem; color: var(--text); font-size: 0.85rem; font-weight: 600; cursor: pointer; min-width: 58px; }
     .currency-btn.active { border-color: var(--accent); color: var(--accent); }
 
     /* ── Type toggle ── */
-    .type-toggle { display: flex; gap: 0; background: var(--raised); border-radius: 12px; padding: 3px; margin-bottom: 1.25rem; }
-    .type-btn {
-      flex: 1; padding: 0.55rem; border: none; border-radius: 10px;
-      font-size: 0.9rem; font-weight: 600; cursor: pointer;
-      background: none; color: var(--muted); transition: all 0.15s;
-    }
-    .type-btn.active.expense { background: var(--accent); color: #fff; }
-    .type-btn.active.income { background: var(--green); color: #fff; }
+    .type-toggle { display: flex; background: var(--raised); border-radius: 12px; padding: 3px; margin-bottom: 1.1rem; gap: 0; }
+    .type-btn { flex: 1; padding: 0.5rem; border: none; border-radius: 10px; font-size: 0.875rem; font-weight: 600; cursor: pointer; background: none; color: var(--muted); transition: all 0.15s; }
+    .type-btn.active.expense { background: var(--red); color: #fff; }
+    .type-btn.active.income  { background: var(--green); color: #fff; }
 
     /* ── Category grid ── */
-    .cat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem; }
-    .cat-tile {
-      display: flex; flex-direction: column; align-items: center; gap: 3px;
-      padding: 0.5rem 0.25rem; border-radius: 10px; cursor: pointer;
-      background: var(--raised); border: 2px solid transparent; transition: all 0.12s;
-    }
-    .cat-tile .cat-icon { font-size: 1.4rem; }
-    .cat-tile .cat-name { font-size: 0.6rem; color: var(--muted); text-align: center; line-height: 1.2; }
-    .cat-tile.selected { border-color: var(--accent); background: rgba(233,69,96,0.12); }
+    .cat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.45rem; }
+    .cat-tile { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 0.5rem 0.2rem; border-radius: 10px; cursor: pointer; background: var(--raised); border: 2px solid transparent; transition: all 0.12s; }
+    .cat-tile .cat-icon { font-size: 1.3rem; }
+    .cat-tile .cat-name { font-size: 0.58rem; color: var(--muted); text-align: center; line-height: 1.2; }
+    .cat-tile.selected { border-color: var(--accent); background: var(--accent-dim); }
 
-    /* ── Currency picker ── */
-    .currency-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; }
-    .curr-btn {
-      background: var(--raised); border: 2px solid transparent; border-radius: 10px;
-      padding: 0.6rem; text-align: center; cursor: pointer; color: var(--text);
-      font-size: 0.85rem; font-weight: 600; transition: all 0.12s;
-    }
+    /* ── Currency grid ── */
+    .currency-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.4rem; margin-top: 0.5rem; }
+    .curr-btn { background: var(--raised); border: 2px solid transparent; border-radius: 10px; padding: 0.55rem; text-align: center; cursor: pointer; color: var(--text); font-size: 0.8rem; font-weight: 600; transition: all 0.12s; }
     .curr-btn.selected { border-color: var(--accent); color: var(--accent); }
 
+    /* ── Emoji picker ── */
+    .emoji-trigger { display: flex; align-items: center; gap: 0.75rem; background: var(--raised); border: 1px solid var(--border); border-radius: 12px; padding: 0.7rem 0.9rem; width: 100%; cursor: pointer; color: var(--text); }
+    .emoji-trigger .preview { font-size: 1.6rem; line-height: 1; }
+    .emoji-trigger .hint { font-size: 0.82rem; color: var(--muted); }
+    .emoji-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 0.3rem; margin-top: 0.5rem; padding: 0.6rem; background: var(--raised); border-radius: 12px; max-height: 180px; overflow-y: auto; }
+    .emoji-btn { font-size: 1.3rem; padding: 0.25rem; border: 2px solid transparent; border-radius: 8px; background: none; cursor: pointer; text-align: center; transition: background 0.1s; }
+    .emoji-btn.selected, .emoji-btn:active { background: var(--accent-dim); border-color: var(--accent); }
+
     /* ── Buttons ── */
-    .btn { display: block; width: 100%; padding: 0.85rem; border: none; border-radius: 12px; font-size: 1rem; font-weight: 600; cursor: pointer; text-align: center; transition: opacity 0.15s; }
+    .btn { display: block; width: 100%; padding: 0.8rem; border: none; border-radius: 12px; font-size: 0.95rem; font-weight: 600; cursor: pointer; text-align: center; transition: opacity 0.15s; }
     .btn:active { opacity: 0.8; }
     .btn-primary { background: var(--accent); color: #fff; }
-    .btn-green { background: var(--green); color: #fff; }
-    .btn-ghost { background: var(--raised); color: var(--muted); }
-    .btn-row { display: flex; gap: 0.75rem; }
+    .btn-danger  { background: var(--red); color: #fff; }
+    .btn-green   { background: var(--green); color: #fff; }
+    .btn-ghost   { background: var(--raised); color: var(--muted); }
+    .btn-row { display: flex; gap: 0.6rem; }
     .btn-row .btn { flex: 1; }
+    .btn-icon { background: none; border: none; cursor: pointer; padding: 0.2rem 0.4rem; font-size: 0.9rem; border-radius: 6px; }
+    .btn-icon:hover { background: var(--raised); }
+    .btn-icon.danger { color: var(--red); }
 
     /* ── Reports ── */
-    .period-tabs { display: flex; padding: 0 1rem 0; gap: 0.5rem; }
-    .period-btn {
-      flex: 1; padding: 0.4rem; border: none; border-radius: 8px;
-      background: var(--card); color: var(--muted); font-size: 0.85rem; cursor: pointer;
-    }
+    .period-tabs { display: flex; padding: 0.6rem 1rem 0; gap: 0.4rem; }
+    .period-btn { flex: 1; padding: 0.38rem; border: none; border-radius: 8px; background: var(--card); color: var(--muted); font-size: 0.82rem; cursor: pointer; font-weight: 500; }
     .period-btn.active { background: var(--accent); color: #fff; }
-    .rpt-tabs { display: flex; border-bottom: 1px solid var(--border); margin: 1rem 1rem 0; gap: 0; }
-    .rpt-tab {
-      flex: 1; padding: 0.6rem 0; background: none; border: none;
-      border-bottom: 2px solid transparent; color: var(--muted); font-size: 0.82rem; cursor: pointer;
-    }
+    .rpt-tabs { display: flex; border-bottom: 1px solid var(--border); margin: 0.75rem 1rem 0; }
+    .rpt-tab { flex: 1; padding: 0.55rem 0; background: none; border: none; border-bottom: 2px solid transparent; color: var(--muted); font-size: 0.78rem; cursor: pointer; font-weight: 500; }
     .rpt-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
-    .chart-wrap { height: 220px; padding: 1rem; position: relative; }
+    .chart-wrap { height: 220px; padding: 0.75rem 1rem; position: relative; }
     .cat-list { padding: 0 1rem; }
-    .cat-row { display: flex; align-items: center; gap: 0.75rem; padding: 0.6rem 0; border-bottom: 1px solid var(--border); }
-    .cat-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-    .cat-row-name { flex: 1; font-size: 0.9rem; }
-    .cat-row-total { font-size: 0.9rem; font-weight: 600; }
-    .cat-row-pct { font-size: 0.75rem; color: var(--muted); width: 36px; text-align: right; }
+    .cat-row { display: flex; align-items: center; gap: 0.6rem; padding: 0.55rem 0; border-bottom: 1px solid var(--border); }
+    .cat-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+    .cat-row-name { flex: 1; font-size: 0.875rem; }
+    .cat-row-total { font-size: 0.875rem; font-weight: 600; }
+    .cat-row-pct { font-size: 0.72rem; color: var(--muted); width: 34px; text-align: right; }
 
     /* ── Settings ── */
-    .settings-section { padding: 0 1rem; margin-bottom: 1.5rem; }
-    .settings-row {
-      background: var(--card); border-radius: 12px; padding: 0.9rem 1rem;
-      display: flex; align-items: center; justify-content: space-between;
-      margin-bottom: 0.5rem; cursor: pointer;
-    }
-    .settings-row .label { font-size: 0.9rem; }
-    .settings-row .sub { font-size: 0.75rem; color: var(--muted); margin-top: 2px; }
-    .settings-row select {
-      background: var(--raised); border: none; color: var(--text);
-      font-size: 0.9rem; padding: 0.3rem 0.5rem; border-radius: 8px; cursor: pointer;
-    }
+    .settings-section { padding: 0 1rem; margin-bottom: 1.25rem; }
+    .settings-row { background: var(--card); border-radius: 12px; padding: 0.85rem 1rem; display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.4rem; }
+    .settings-row .label { font-size: 0.875rem; font-weight: 500; }
+    .settings-row .sub { font-size: 0.72rem; color: var(--muted); margin-top: 2px; }
+    .settings-row select { background: var(--raised); border: none; color: var(--text); font-size: 0.875rem; padding: 0.3rem 0.5rem; border-radius: 8px; cursor: pointer; outline: none; }
+    .settings-row.tappable { cursor: pointer; }
+    .settings-row.tappable:active { opacity: 0.7; }
 
     /* ── Toggle switch ── */
-    .toggle { position: relative; width: 44px; height: 24px; flex-shrink: 0; }
+    .toggle { position: relative; width: 44px; height: 26px; flex-shrink: 0; }
     .toggle input { opacity: 0; width: 0; height: 0; }
-    .toggle-slider { position: absolute; inset: 0; background: var(--raised); border-radius: 24px; cursor: pointer; transition: 0.2s; }
-    .toggle-slider::before { content: ''; position: absolute; width: 18px; height: 18px; left: 3px; bottom: 3px; background: var(--muted); border-radius: 50%; transition: 0.2s; }
+    .toggle-slider { position: absolute; inset: 0; background: var(--raised); border-radius: 26px; cursor: pointer; transition: 0.2s; }
+    .toggle-slider::before { content: ''; position: absolute; width: 20px; height: 20px; left: 3px; bottom: 3px; background: var(--muted); border-radius: 50%; transition: 0.2s; }
     .toggle input:checked + .toggle-slider { background: var(--accent); }
-    .toggle input:checked + .toggle-slider::before { transform: translateX(20px); background: #fff; }
+    .toggle input:checked + .toggle-slider::before { transform: translateX(18px); background: #fff; }
 
     /* ── Recurring sheet items ── */
-    .rec-item { background: var(--raised); border-radius: 12px; padding: 0.75rem 1rem; margin-bottom: 0.75rem; }
-    .rec-item .rec-name { font-size: 0.95rem; font-weight: 600; margin-bottom: 0.35rem; }
-    .rec-item .rec-meta { font-size: 0.8rem; color: var(--muted); margin-bottom: 0.6rem; }
-    .rec-item .rec-actions { display: flex; gap: 0.5rem; }
-    .rec-item .rec-actions button { flex: 1; padding: 0.4rem; border: none; border-radius: 8px; font-size: 0.8rem; font-weight: 600; cursor: pointer; }
-    .rec-item .rec-actions .log-btn { background: var(--green); color: #fff; }
-    .rec-item .rec-actions .skip-btn { background: var(--raised); color: var(--muted); }
+    .rec-item { background: var(--raised); border-radius: 12px; padding: 0.75rem 0.9rem; margin-bottom: 0.6rem; }
+    .rec-item .rec-name { font-size: 0.9rem; font-weight: 600; margin-bottom: 0.25rem; }
+    .rec-item .rec-meta { font-size: 0.78rem; color: var(--muted); margin-bottom: 0.5rem; }
+    .rec-item .rec-actions { display: flex; gap: 0.4rem; }
+    .rec-item .rec-actions button { flex: 1; padding: 0.38rem; border: none; border-radius: 8px; font-size: 0.78rem; font-weight: 600; cursor: pointer; }
+    .log-btn  { background: var(--green); color: #fff; }
+    .skip-btn { background: var(--raised); color: var(--muted); }
 
     /* ── Frequency row ── */
-    .freq-row { display: flex; gap: 0.5rem; }
-    .freq-btn { flex: 1; padding: 0.45rem; background: var(--raised); border: 2px solid transparent; border-radius: 8px; color: var(--muted); font-size: 0.8rem; cursor: pointer; text-align: center; }
+    .freq-row { display: flex; gap: 0.4rem; }
+    .freq-btn { flex: 1; padding: 0.42rem; background: var(--raised); border: 2px solid transparent; border-radius: 8px; color: var(--muted); font-size: 0.78rem; cursor: pointer; text-align: center; font-weight: 500; }
     .freq-btn.active { border-color: var(--accent); color: var(--accent); }
 
-    /* ── Empty state ── */
-    .empty { text-align: center; padding: 3rem 2rem; color: var(--muted); }
-    .empty .icon { font-size: 3rem; margin-bottom: 1rem; }
-    .empty p { font-size: 0.9rem; }
-
     /* ── Color swatches ── */
-    .swatch-row { display: flex; gap: 0.5rem; flex-wrap: wrap; }
-    .swatch { width: 28px; height: 28px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; }
-    .swatch.selected { border-color: #fff; }
+    .swatch-row { display: flex; gap: 0.45rem; flex-wrap: wrap; }
+    .swatch { width: 26px; height: 26px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: border-color 0.12s; }
+    .swatch.selected { border-color: var(--text); }
+
+    /* ── Empty state ── */
+    .empty { text-align: center; padding: 2.5rem 2rem; color: var(--muted); }
+    .empty .icon { font-size: 2.5rem; margin-bottom: 0.75rem; }
+    .empty p { font-size: 0.875rem; line-height: 1.5; }
   </style>
 </head>
 <body x-data="budgetApp()" x-init="init()" x-cloak>
 
 <div id="app" x-show="!loading">
 
-  <!-- ═══════════════════════════════════════════════════════════ DASHBOARD -->
+  <!-- ═══════════════════════════════════════════════════════ DASHBOARD -->
   <div class="view" :class="{ active: currentView === 'dashboard' }">
     <div class="view-header">
       <h1>Budget</h1>
@@ -304,13 +256,11 @@
       </div>
     </div>
 
-    <!-- Recurring banner -->
-    <div class="banner" x-show="dueRecurring.length > 0" @click.stop>
+    <div class="banner" x-show="dueRecurring.length > 0">
       <span>⚡ <span x-text="dueRecurring.length"></span> recurring due</span>
       <button @click="showRecurringSheet = true">Review & Log</button>
     </div>
 
-    <!-- Stats -->
     <div class="stats-grid">
       <div class="stat-card spent">
         <div class="label">Spent</div>
@@ -330,28 +280,26 @@
       </div>
       <div class="progress-bar">
         <div class="progress-fill"
-             :style="`width: ${savingsPct}%; background: ${savingsPct > 90 ? 'var(--accent)' : savingsPct > 70 ? '#FF9800' : 'var(--green)'}`"></div>
+             :style="`width:${savingsPct}%; background:${savingsPct > 90 ? 'var(--red)' : savingsPct > 70 ? '#f59e0b' : 'var(--green)'}`"></div>
       </div>
-      <div style="font-size:0.7rem;color:var(--muted);margin-top:0.35rem;text-align:right"
-           x-text="`${savingsPct}% of income spent`" x-show="dashStats.income > 0"></div>
+      <div class="progress-sub" x-show="dashStats.income > 0" x-text="`${savingsPct}% of income spent`"></div>
     </div>
 
-    <!-- Recent -->
     <div class="section">
       <div class="section-title">Recent</div>
-      <div x-show="!recentTx.length" class="empty" style="padding:1.5rem 0">
+      <div x-show="!recentTx.length" class="empty" style="padding:1.25rem 0">
         <div class="icon">💸</div>
         <p>No entries this month.<br>Tap + to add one.</p>
       </div>
       <template x-for="e in recentTx" :key="e.id">
-        <div class="tx-item" @click="openAddModal(e)">
+        <div class="tx-item" style="border-radius:14px;margin-bottom:0.45rem" @click="openAddModal(e)">
           <div class="tx-icon" x-text="e.type === 'income' ? '💰' : getCat(e.categoryId).icon"></div>
           <div class="tx-info">
             <div class="tx-name" x-text="e.name"></div>
             <div class="tx-cat" x-text="e.type === 'income' ? 'Income' : getCat(e.categoryId).name"></div>
           </div>
           <div class="tx-amt" :class="e.type">
-            <div class="primary" x-text="(e.type === 'income' ? '+' : '-') + fmtAmt(e.amount, e.currency)"></div>
+            <div class="primary" x-text="(e.type==='income'?'+':'-') + fmtAmt(e.amount, e.currency)"></div>
             <div class="secondary" x-show="e.currency !== 'CHF'" x-text="fmtCHF(e.amountCHF)"></div>
           </div>
         </div>
@@ -359,7 +307,7 @@
     </div>
   </div>
 
-  <!-- ══════════════════════════════════════════════════════ TRANSACTIONS -->
+  <!-- ═══════════════════════════════════════════════════ TRANSACTIONS -->
   <div class="view" :class="{ active: currentView === 'transactions' }">
     <div class="view-header">
       <h1>Transactions</h1>
@@ -371,10 +319,13 @@
     </div>
 
     <div class="filter-bar">
-      <button class="filter-btn" :class="{active: txFilter==='all'}" @click="txFilter='all'; loadTransactions()">All</button>
-      <button class="filter-btn" :class="{active: txFilter==='expense'}" @click="txFilter='expense'; loadTransactions()">Expenses</button>
-      <button class="filter-btn" :class="{active: txFilter==='income'}" @click="txFilter='income'; loadTransactions()">Income</button>
-      <input class="search-input" type="search" placeholder="Search…" x-model.debounce.300ms="txSearch" @input="loadTransactions()">
+      <button class="filter-btn" :class="{active:txFilter==='all'}"     @click="txFilter='all';     loadTransactions()">All</button>
+      <button class="filter-btn" :class="{active:txFilter==='expense'}" @click="txFilter='expense'; loadTransactions()">Expenses</button>
+      <button class="filter-btn" :class="{active:txFilter==='income'}"  @click="txFilter='income';  loadTransactions()">Income</button>
+      <div class="search-wrap">
+        <input class="search-input" type="search" placeholder="Search…"
+               x-model.debounce.300ms="txSearch" @input="loadTransactions()">
+      </div>
     </div>
 
     <div x-show="!txGrouped.length" class="empty">
@@ -386,26 +337,34 @@
       <div class="tx-date-group">
         <div class="tx-date-label" x-text="group.label"></div>
         <template x-for="e in group.items" :key="e.id">
-          <div class="tx-item" @click="openAddModal(e)">
-            <div class="tx-icon" x-text="e.type === 'income' ? '💰' : getCat(e.categoryId).icon"></div>
-            <div class="tx-info">
-              <div class="tx-name" x-text="e.name"></div>
-              <div class="tx-cat" x-text="e.type === 'income' ? 'Income' : getCat(e.categoryId).name"></div>
+          <div class="swipe-wrapper">
+            <div class="swipe-delete-bg" @click="deleteExpense(e.id, true); resetSwipe(e.id)">Delete</div>
+            <div class="tx-item"
+                 :style="`transform:translateX(${swipeOffsets[e.id] || 0}px)`"
+                 :class="{'is-swiping': swipingId === e.id}"
+                 @touchstart.passive="swipeStart(e.id, $event)"
+                 @touchmove.passive="swipeMove(e.id, $event)"
+                 @touchend="swipeEnd(e.id)"
+                 @click="(swipeOffsets[e.id] || 0) < 0 ? resetSwipe(e.id) : openAddModal(e)">
+              <div class="tx-icon" x-text="e.type==='income' ? '💰' : getCat(e.categoryId).icon"></div>
+              <div class="tx-info">
+                <div class="tx-name" x-text="e.name"></div>
+                <div class="tx-cat" x-text="e.type==='income' ? 'Income' : getCat(e.categoryId).name"></div>
+              </div>
+              <div class="tx-amt" :class="e.type">
+                <div class="primary" x-text="(e.type==='income'?'+':'-') + fmtAmt(e.amount, e.currency)"></div>
+                <div class="secondary" x-show="e.currency !== 'CHF'" x-text="fmtCHF(e.amountCHF)"></div>
+              </div>
             </div>
-            <div class="tx-amt" :class="e.type">
-              <div class="primary" x-text="(e.type === 'income' ? '+' : '-') + fmtAmt(e.amount, e.currency)"></div>
-              <div class="secondary" x-show="e.currency !== 'CHF'" x-text="fmtCHF(e.amountCHF)"></div>
-            </div>
-            <button class="tx-del" @click.stop="deleteExpense(e.id)">✕</button>
           </div>
         </template>
       </div>
     </template>
   </div>
 
-  <!-- ═══════════════════════════════════════════════════════════ REPORTS -->
+  <!-- ═══════════════════════════════════════════════════════ REPORTS -->
   <div class="view" :class="{ active: currentView === 'reports' }">
-    <div class="view-header">
+    <div class="view-header" style="border-bottom:none">
       <h1>Reports</h1>
       <div class="month-nav">
         <button @click="rptPrev()">‹</button>
@@ -414,31 +373,26 @@
       </div>
     </div>
 
-    <div class="period-tabs" style="margin-top:0.75rem;">
-      <button class="period-btn" :class="{active: rptPeriod==='week'}" @click="switchRptPeriod('week')">Week</button>
-      <button class="period-btn" :class="{active: rptPeriod==='month'}" @click="switchRptPeriod('month')">Month</button>
-      <button class="period-btn" :class="{active: rptPeriod==='year'}" @click="switchRptPeriod('year')">Year</button>
+    <div class="period-tabs">
+      <button class="period-btn" :class="{active:rptPeriod==='week'}"  @click="switchRptPeriod('week')">Week</button>
+      <button class="period-btn" :class="{active:rptPeriod==='month'}" @click="switchRptPeriod('month')">Month</button>
+      <button class="period-btn" :class="{active:rptPeriod==='year'}"  @click="switchRptPeriod('year')">Year</button>
     </div>
 
     <div class="rpt-tabs">
-      <button class="rpt-tab" :class="{active: rptTab==='category'}" @click="switchRptTab('category')">By Category</button>
-      <button class="rpt-tab" :class="{active: rptTab==='time'}" @click="switchRptTab('time')">By Time</button>
-      <button class="rpt-tab" :class="{active: rptTab==='weekday'}" @click="switchRptTab('weekday')">By Weekday</button>
+      <button class="rpt-tab" :class="{active:rptTab==='category'}" @click="switchRptTab('category')">By Category</button>
+      <button class="rpt-tab" :class="{active:rptTab==='time'}"     @click="switchRptTab('time')">By Time</button>
+      <button class="rpt-tab" :class="{active:rptTab==='weekday'}"  @click="switchRptTab('weekday')">By Weekday</button>
     </div>
 
-    <!-- Category tab -->
     <div x-show="rptTab === 'category'">
-      <div class="chart-wrap">
-        <canvas id="categoryChart"></canvas>
-      </div>
+      <div class="chart-wrap"><canvas id="categoryChart"></canvas></div>
       <div class="cat-list">
-        <div x-show="!categoryData.length" class="empty" style="padding:1rem 0">
-          <p>No expense data for this period.</p>
-        </div>
+        <div x-show="!categoryData.length" class="empty" style="padding:1rem 0"><p>No expense data for this period.</p></div>
         <template x-for="item in categoryData" :key="item.id">
           <div class="cat-row">
-            <div class="cat-dot" :style="`background: ${item.color}`"></div>
-            <span class="cat-icon" x-text="item.icon"></span>
+            <div class="cat-dot" :style="`background:${item.color}`"></div>
+            <span x-text="item.icon"></span>
             <span class="cat-row-name" x-text="item.name"></span>
             <span class="cat-row-total" x-text="fmtCHF(item.total)"></span>
             <span class="cat-row-pct" x-text="`${item.percent}%`"></span>
@@ -447,30 +401,28 @@
       </div>
     </div>
 
-    <!-- Time tab -->
     <div x-show="rptTab === 'time'">
-      <div class="chart-wrap">
-        <canvas id="timeChart"></canvas>
-      </div>
+      <div class="chart-wrap"><canvas id="timeChart"></canvas></div>
     </div>
 
-    <!-- Weekday tab -->
     <div x-show="rptTab === 'weekday'">
-      <div class="chart-wrap">
-        <canvas id="weekdayChart"></canvas>
-      </div>
+      <div class="chart-wrap"><canvas id="weekdayChart"></canvas></div>
       <div class="section" style="padding-top:0">
-        <p style="font-size:0.8rem;color:var(--muted);">
-          Average daily spend per weekday. Weekends highlighted.
-        </p>
+        <p style="font-size:0.78rem;color:var(--muted)">Average daily spend per weekday. Weekends highlighted.</p>
       </div>
     </div>
   </div>
 
-  <!-- ═══════════════════════════════════════════════════════════ SETTINGS -->
+  <!-- ═══════════════════════════════════════════════════════ SETTINGS -->
   <div class="view" :class="{ active: currentView === 'settings' }">
-    <div class="view-header" style="border-bottom:none">
-      <h1>Settings</h1>
+    <div class="view-header" style="border-bottom:none"><h1>Settings</h1></div>
+
+    <div class="settings-section">
+      <div class="section-title">Appearance</div>
+      <div class="settings-row tappable" @click="toggleTheme()">
+        <div class="label">Theme</div>
+        <span x-text="settings.theme === 'dark' ? '🌙 Dark' : '☀️ Light'" style="font-size:0.875rem;color:var(--muted)"></span>
+      </div>
     </div>
 
     <div class="settings-section">
@@ -486,12 +438,12 @@
           </template>
         </select>
       </div>
-      <div class="settings-row" @click="updateRates()" style="cursor:pointer">
+      <div class="settings-row tappable" @click="updateRates()">
         <div>
           <div class="label">Update exchange rates</div>
-          <div class="sub" x-text="ratesFetchedAt ? 'Last updated: ' + ratesFetchedAt : 'Using hardcoded defaults'"></div>
+          <div class="sub" x-text="ratesFetchedAt ? 'Last updated: ' + ratesFetchedAt : 'Using built-in defaults'"></div>
         </div>
-        <span x-text="ratesUpdating ? '⏳' : '↻'" style="font-size:1.3rem"></span>
+        <span x-text="ratesUpdating ? '⏳' : '↻'" style="font-size:1.2rem;color:var(--muted)"></span>
       </div>
     </div>
 
@@ -503,158 +455,150 @@
             <span x-text="cat.icon" style="font-size:1.2rem"></span>
             <span class="label" x-text="cat.name"></span>
           </div>
-          <button x-show="!cat.isDefault" @click="deleteCategory(cat)"
-                  style="background:none;border:none;color:var(--accent);font-size:1rem;cursor:pointer">✕</button>
+          <div style="display:flex;gap:0.25rem;align-items:center">
+            <button class="btn-icon" @click="openCatForm(cat)" title="Edit">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            </button>
+            <button class="btn-icon danger" x-show="!cat.isDefault" @click="deleteCategory(cat)" title="Delete">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
         </div>
       </template>
-
-      <div x-show="showAddCategory" style="margin-top:0.5rem">
-        <div class="card">
-          <div class="form-group">
-            <label class="form-label">Name</label>
-            <input class="form-input" x-model="newCat.name" placeholder="Category name" @keyup.enter="addCategory()">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Icon (emoji)</label>
-            <input class="form-input" x-model="newCat.icon" placeholder="📦" maxlength="4">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Color</label>
-            <div class="swatch-row">
-              <template x-for="c in ['#e94560','#4CAF50','#2196F3','#FF9800','#9C27B0','#F44336','#00BCD4','#795548','#009688','#9E9E9E']" :key="c">
-                <div class="swatch" :style="`background:${c}`" :class="{selected: newCat.color===c}" @click="newCat.color=c"></div>
-              </template>
-            </div>
-          </div>
-          <div class="btn-row">
-            <button class="btn btn-ghost" @click="showAddCategory=false">Cancel</button>
-            <button class="btn btn-primary" @click="addCategory()">Add</button>
-          </div>
-        </div>
-      </div>
-
-      <button class="btn btn-ghost" style="margin-top:0.5rem" @click="showAddCategory=!showAddCategory"
-              x-text="showAddCategory ? 'Cancel' : '+ Add category'"></button>
+      <button class="btn btn-ghost" style="margin-top:0.4rem" @click="openCatForm()">+ Add category</button>
     </div>
 
     <div class="settings-section">
       <div class="section-title">Recurring</div>
-      <div class="settings-row" @click="setView('recurring')">
+      <div class="settings-row tappable" @click="setView('recurring'); loadRecurring()">
         <div>
           <div class="label">Recurring expenses</div>
           <div class="sub" x-text="`${recurringRules.length} rule${recurringRules.length !== 1 ? 's' : ''}`"></div>
         </div>
-        <span style="color:var(--muted)">›</span>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
+    </div>
+
+    <div class="settings-section">
+      <div class="section-title">Data & Backup</div>
+      <div class="settings-row tappable" @click="downloadBackup()">
+        <div>
+          <div class="label">Export backup</div>
+          <div class="sub">Download all data as a JSON file</div>
+        </div>
+        <span style="font-size:1.1rem;color:var(--muted)">↓</span>
+      </div>
+      <label class="settings-row tappable" style="cursor:pointer">
+        <div>
+          <div class="label">Restore from backup</div>
+          <div class="sub">Replaces all current data</div>
+        </div>
+        <span style="font-size:1.1rem;color:var(--muted)">↑</span>
+        <input type="file" accept=".json" style="display:none" @change="restoreBackup($event.target.files[0])">
+      </label>
     </div>
   </div>
 
-  <!-- ═══════════════════════════════════════════════════════════ RECURRING -->
+  <!-- ═══════════════════════════════════════════════════════ RECURRING -->
   <div class="view" :class="{ active: currentView === 'recurring' }">
     <div class="view-header">
-      <button @click="setView('settings')" style="background:none;border:none;color:var(--accent);font-size:1rem;cursor:pointer;margin-right:0.5rem">‹ Back</button>
+      <button @click="setView('settings')" style="background:none;border:none;color:var(--accent);font-size:0.9rem;font-weight:600;cursor:pointer;padding:0">‹ Back</button>
       <h1>Recurring</h1>
-      <div style="width:60px"></div>
+      <div style="width:52px"></div>
     </div>
-
     <div class="section">
       <div x-show="!recurringRules.length" class="empty">
         <div class="icon">🔄</div>
         <p>No recurring rules yet.<br>Add rent, subscriptions, etc.</p>
       </div>
       <template x-for="rule in recurringRules" :key="rule.id">
-        <div class="settings-row" style="flex-direction:column;align-items:stretch;gap:0.5rem">
-          <div style="display:flex;align-items:center;justify-content:space-between">
-            <div>
-              <div class="label" x-text="rule.name"></div>
-              <div class="sub">
-                <span x-text="fmtAmt(rule.amount, rule.currency)"></span>
-                &nbsp;·&nbsp;
-                <span x-text="rule.frequency"></span>
-              </div>
-            </div>
-            <div style="display:flex;gap:0.5rem;align-items:center">
-              <label class="toggle">
-                <input type="checkbox" :checked="rule.active" @change="toggleRecurring(rule)">
-                <span class="toggle-slider"></span>
-              </label>
-              <button @click="openAddRecurring(rule)"
-                      style="background:var(--raised);border:none;color:var(--muted);border-radius:8px;padding:0.3rem 0.6rem;cursor:pointer;font-size:0.8rem">Edit</button>
-              <button @click="deleteRecurring(rule.id)"
-                      style="background:none;border:none;color:var(--accent);font-size:1rem;cursor:pointer">✕</button>
+        <div class="settings-row" style="gap:0.5rem">
+          <div style="flex:1;min-width:0">
+            <div class="label" x-text="rule.name"></div>
+            <div class="sub">
+              <span x-text="fmtAmt(rule.amount, rule.currency)"></span> · <span x-text="rule.frequency"></span>
             </div>
           </div>
+          <label class="toggle">
+            <input type="checkbox" :checked="rule.active" @change="toggleRecurring(rule)">
+            <span class="toggle-slider"></span>
+          </label>
+          <button class="btn-icon" @click="openAddRecurring(rule)" style="color:var(--muted)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </button>
+          <button class="btn-icon danger" @click="deleteRecurring(rule.id)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
         </div>
       </template>
-
-      <button class="btn btn-primary" style="margin-top:1rem" @click="openAddRecurring()">+ Add recurring</button>
+      <button class="btn btn-primary" style="margin-top:0.75rem" @click="openAddRecurring()">+ Add recurring</button>
     </div>
   </div>
 
-  <!-- ══════════════════════════════════════════════════════ BOTTOM NAV -->
+  <!-- ═══════════════════════════════════════════════ BOTTOM NAV -->
   <nav class="bottom-nav">
-    <button class="nav-btn" :class="{active: currentView==='dashboard'}" @click="setView('dashboard')">
-      <span class="icon">🏠</span><span>Home</span>
+    <button class="nav-btn" :class="{active:currentView==='dashboard'}" @click="setView('dashboard')">
+      <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>
+      <span>Home</span>
     </button>
-    <button class="nav-btn" :class="{active: currentView==='transactions'}" @click="setView('transactions')">
-      <span class="icon">📋</span><span>List</span>
+    <button class="nav-btn" :class="{active:currentView==='transactions'}" @click="setView('transactions')">
+      <svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+      <span>List</span>
     </button>
     <button class="nav-btn add-btn" @click="openAddModal()">
-      <span class="icon">+</span>
+      <div class="add-circle">
+        <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      </div>
     </button>
-    <button class="nav-btn" :class="{active: currentView==='reports'}" @click="setView('reports')">
-      <span class="icon">📊</span><span>Reports</span>
+    <button class="nav-btn" :class="{active:currentView==='reports'}" @click="setView('reports')">
+      <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      <span>Reports</span>
     </button>
-    <button class="nav-btn" :class="{active: currentView==='settings' || currentView==='recurring'}" @click="setView('settings'); loadRecurring()">
-      <span class="icon">⚙️</span><span>Settings</span>
+    <button class="nav-btn" :class="{active:currentView==='settings'||currentView==='recurring'}" @click="setView('settings'); loadRecurring()">
+      <svg viewBox="0 0 24 24"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
+      <span>Settings</span>
     </button>
   </nav>
 
-  <!-- ══════════════════════════════════════════════════ ADD / EDIT SHEET -->
-  <div class="overlay" x-show="showAddModal" @click="closeAddModal()" x-transition:enter.opacity.duration.200ms x-transition:leave.opacity.duration.150ms>
+  <!-- ══════════════════════════════════════════ ADD / EDIT SHEET -->
+  <div class="overlay" x-show="showAddModal" @click="closeAddModal()"
+       x-transition:enter.opacity.duration.200ms x-transition:leave.opacity.duration.150ms>
     <div class="sheet" @click.stop>
       <div class="sheet-handle"></div>
 
-      <!-- Expense / Income toggle -->
       <div class="type-toggle">
-        <button class="type-btn" :class="{active: form.type==='expense', expense: form.type==='expense'}"
+        <button class="type-btn" :class="{active:form.type==='expense',expense:form.type==='expense'}"
                 @click="form.type='expense'; form.categoryId = categories[0]?.id || 'cat_food'">Expense</button>
-        <button class="type-btn" :class="{active: form.type==='income', income: form.type==='income'}"
+        <button class="type-btn" :class="{active:form.type==='income',income:form.type==='income'}"
                 @click="form.type='income'">Income</button>
       </div>
 
-      <!-- Amount + currency -->
       <div class="form-group">
         <label class="form-label">Amount</label>
         <div class="amount-row">
           <input class="amount-input" type="number" inputmode="decimal" min="0" step="0.01"
-                 x-model="form.amount" placeholder="0.00" autofocus>
-          <button class="currency-btn" :class="{active: showCurrencyPicker}"
-                  @click="showCurrencyPicker = !showCurrencyPicker" x-text="form.currency"></button>
+                 x-model="form.amount" placeholder="0.00">
+          <button class="currency-btn" :class="{active:showCurrencyPicker}"
+                  @click="showCurrencyPicker=!showCurrencyPicker" x-text="form.currency"></button>
         </div>
-        <!-- Inline currency picker -->
-        <div x-show="showCurrencyPicker" style="margin-top:0.5rem">
-          <div class="currency-grid">
-            <template x-for="c in allCurrencies" :key="c">
-              <button class="curr-btn" :class="{selected: form.currency===c}"
-                      @click="form.currency=c; showCurrencyPicker=false" x-text="c"></button>
-            </template>
-          </div>
+        <div x-show="showCurrencyPicker" class="currency-grid">
+          <template x-for="c in allCurrencies" :key="c">
+            <button class="curr-btn" :class="{selected:form.currency===c}"
+                    @click="form.currency=c; showCurrencyPicker=false" x-text="c"></button>
+          </template>
         </div>
       </div>
 
-      <!-- Name -->
       <div class="form-group">
         <label class="form-label">Description</label>
         <input class="form-input" x-model="form.name" placeholder="e.g. Coffee, Migros, Salary…">
       </div>
 
-      <!-- Category (only for expenses) -->
       <div class="form-group" x-show="form.type === 'expense'">
         <label class="form-label">Category</label>
         <div class="cat-grid">
           <template x-for="cat in categories" :key="cat.id">
-            <div class="cat-tile" :class="{selected: form.categoryId===cat.id}" @click="form.categoryId=cat.id">
+            <div class="cat-tile" :class="{selected:form.categoryId===cat.id}" @click="form.categoryId=cat.id">
               <span class="cat-icon" x-text="cat.icon"></span>
               <span class="cat-name" x-text="cat.name"></span>
             </div>
@@ -662,15 +606,13 @@
         </div>
       </div>
 
-      <!-- Date -->
       <div class="form-group">
         <label class="form-label">Date</label>
         <input class="form-input" type="date" x-model="form.date">
       </div>
 
-      <!-- Note (collapsible) -->
       <div class="form-group">
-        <button style="background:none;border:none;color:var(--muted);font-size:0.8rem;cursor:pointer;padding:0"
+        <button style="background:none;border:none;color:var(--muted);font-size:0.78rem;cursor:pointer;padding:0"
                 @click="form.showNote=!form.showNote"
                 x-text="form.showNote ? '▾ Hide note' : '▸ Add note'"></button>
         <div x-show="form.showNote" style="margin-top:0.4rem">
@@ -678,50 +620,88 @@
         </div>
       </div>
 
-      <!-- Actions -->
       <div class="btn-row" style="margin-top:0.5rem">
         <button class="btn btn-ghost" @click="closeAddModal()">Cancel</button>
-        <button class="btn" :class="form.type==='income' ? 'btn-green' : 'btn-primary'" @click="saveExpense()">
+        <button class="btn" :class="form.type==='income' ? 'btn-green' : 'btn-danger'" @click="saveExpense()">
           <span x-text="form.id ? 'Update' : 'Save'"></span>
         </button>
       </div>
-      <div x-show="form.id">
-        <button class="btn" style="margin-top:0.5rem;background:none;color:var(--accent);border:1px solid rgba(233,69,96,0.3)"
+      <div x-show="form.id" style="margin-top:0.5rem">
+        <button class="btn" style="background:none;color:var(--red);border:1px solid rgba(248,113,113,0.3)"
                 @click="deleteExpense(form.id)">Delete entry</button>
       </div>
     </div>
   </div>
 
-  <!-- ══════════════════════════════════════════════ RECURRING DUE SHEET -->
-  <div class="overlay" x-show="showRecurringSheet" @click="showRecurringSheet=false" x-transition:enter.opacity.duration.200ms x-transition:leave.opacity.duration.150ms>
+  <!-- ═══════════════════════════════════ RECURRING DUE SHEET -->
+  <div class="overlay" x-show="showRecurringSheet" @click="showRecurringSheet=false"
+       x-transition:enter.opacity.duration.200ms x-transition:leave.opacity.duration.150ms>
     <div class="sheet" @click.stop>
       <div class="sheet-handle"></div>
       <div class="sheet-title">Recurring due</div>
-
       <template x-for="rule in dueRecurring" :key="rule.id">
         <div class="rec-item">
           <div class="rec-name" x-text="rule.name"></div>
-          <div class="rec-meta">
-            <span x-text="fmtAmt(rule.amount, rule.currency)"></span>
-            &nbsp;·&nbsp;
-            <span x-text="rule.frequency"></span>
-          </div>
+          <div class="rec-meta"><span x-text="fmtAmt(rule.amount, rule.currency)"></span> · <span x-text="rule.frequency"></span></div>
           <div class="rec-actions">
-            <button class="log-btn" @click="logRecurringItem(rule)">✓ Log</button>
+            <button class="log-btn"  @click="logRecurringItem(rule)">✓ Log</button>
             <button class="skip-btn" @click="skipRecurringItem(rule)">Skip</button>
           </div>
         </div>
       </template>
-
       <div class="btn-row" style="margin-top:0.5rem">
         <button class="btn btn-ghost" @click="showRecurringSheet=false">Close</button>
-        <button class="btn btn-green" @click="logAllRecurring()" x-show="dueRecurring.length > 1">Log all</button>
+        <button class="btn btn-green" x-show="dueRecurring.length > 1" @click="logAllRecurring()">Log all</button>
       </div>
     </div>
   </div>
 
-  <!-- ═══════════════════════════════════════════ ADD RECURRING SHEET -->
-  <div class="overlay" x-show="showAddRecurring" @click="showAddRecurring=false" x-transition:enter.opacity.duration.200ms x-transition:leave.opacity.duration.150ms>
+  <!-- ══════════════════════════════════ CATEGORY ADD/EDIT SHEET -->
+  <div class="overlay" x-show="editCatForm !== null" @click="editCatForm=null; showEmojiPicker=false"
+       x-transition:enter.opacity.duration.200ms x-transition:leave.opacity.duration.150ms>
+    <div class="sheet" @click.stop x-show="editCatForm !== null">
+      <div class="sheet-handle"></div>
+      <div class="sheet-title" x-text="editCatForm?.id ? 'Edit category' : 'New category'"></div>
+
+      <div class="form-group">
+        <label class="form-label">Name</label>
+        <input class="form-input" x-model="editCatForm.name" placeholder="Category name" @keyup.enter="saveCatForm()">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Icon</label>
+        <button class="emoji-trigger" @click="showEmojiPicker=!showEmojiPicker">
+          <span class="preview" x-text="editCatForm.icon"></span>
+          <span class="hint" x-text="showEmojiPicker ? 'Tap an emoji below' : 'Tap to choose'"></span>
+        </button>
+        <div x-show="showEmojiPicker" class="emoji-grid">
+          <template x-for="emoji in availableEmojis" :key="emoji">
+            <button class="emoji-btn" :class="{selected: editCatForm.icon === emoji}"
+                    @click="editCatForm.icon = emoji; showEmojiPicker = false"
+                    x-text="emoji"></button>
+          </template>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Colour</label>
+        <div class="swatch-row">
+          <template x-for="c in ['#6366f1','#22c55e','#f87171','#f59e0b','#3b82f6','#ec4899','#14b8a6','#8b5cf6','#f97316','#6b7280']" :key="c">
+            <div class="swatch" :style="`background:${c}`" :class="{selected:editCatForm.color===c}" @click="editCatForm.color=c"></div>
+          </template>
+        </div>
+      </div>
+
+      <div class="btn-row" style="margin-top:0.5rem">
+        <button class="btn btn-ghost" @click="editCatForm=null; showEmojiPicker=false">Cancel</button>
+        <button class="btn btn-primary" @click="saveCatForm()">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════ ADD RECURRING SHEET -->
+  <div class="overlay" x-show="showAddRecurring" @click="showAddRecurring=false"
+       x-transition:enter.opacity.duration.200ms x-transition:leave.opacity.duration.150ms>
     <div class="sheet" @click.stop>
       <div class="sheet-handle"></div>
       <div class="sheet-title" x-text="recurringForm.id ? 'Edit recurring' : 'Add recurring'"></div>
@@ -730,19 +710,15 @@
         <label class="form-label">Name</label>
         <input class="form-input" x-model="recurringForm.name" placeholder="e.g. Rent, Spotify…">
       </div>
-
       <div class="form-group">
         <label class="form-label">Amount</label>
         <div class="amount-row">
           <input class="amount-input" type="number" inputmode="decimal" x-model="recurringForm.amount" placeholder="0.00">
-          <select class="currency-btn" x-model="recurringForm.currency" style="font-size:0.85rem">
-            <template x-for="c in allCurrencies" :key="c">
-              <option :value="c" x-text="c"></option>
-            </template>
+          <select class="currency-btn" x-model="recurringForm.currency" style="font-size:0.82rem">
+            <template x-for="c in allCurrencies" :key="c"><option :value="c" x-text="c"></option></template>
           </select>
         </div>
       </div>
-
       <div class="form-group">
         <label class="form-label">Category</label>
         <select class="form-input" x-model="recurringForm.categoryId">
@@ -751,50 +727,44 @@
           </template>
         </select>
       </div>
-
       <div class="form-group">
         <label class="form-label">Frequency</label>
         <div class="freq-row">
-          <button class="freq-btn" :class="{active: recurringForm.frequency==='weekly'}" @click="recurringForm.frequency='weekly'">Weekly</button>
-          <button class="freq-btn" :class="{active: recurringForm.frequency==='monthly'}" @click="recurringForm.frequency='monthly'">Monthly</button>
-          <button class="freq-btn" :class="{active: recurringForm.frequency==='yearly'}" @click="recurringForm.frequency='yearly'">Yearly</button>
+          <button class="freq-btn" :class="{active:recurringForm.frequency==='weekly'}"  @click="recurringForm.frequency='weekly'">Weekly</button>
+          <button class="freq-btn" :class="{active:recurringForm.frequency==='monthly'}" @click="recurringForm.frequency='monthly'">Monthly</button>
+          <button class="freq-btn" :class="{active:recurringForm.frequency==='yearly'}"  @click="recurringForm.frequency='yearly'">Yearly</button>
         </div>
       </div>
-
       <div class="form-group" x-show="recurringForm.frequency === 'monthly' || recurringForm.frequency === 'yearly'">
         <label class="form-label">Day of month</label>
         <input class="form-input" type="number" min="1" max="31" x-model.number="recurringForm.dayOfMonth">
       </div>
-
       <div class="form-group" x-show="recurringForm.frequency === 'yearly'">
         <label class="form-label">Month</label>
         <select class="form-input" x-model.number="recurringForm.monthOfYear">
-          <template x-for="(m, i) in ['January','February','March','April','May','June','July','August','September','October','November','December']" :key="i">
+          <template x-for="(m,i) in ['January','February','March','April','May','June','July','August','September','October','November','December']" :key="i">
             <option :value="i+1" x-text="m"></option>
           </template>
         </select>
       </div>
-
       <div class="form-group" x-show="recurringForm.frequency === 'weekly'">
         <label class="form-label">Day of week</label>
         <select class="form-input" x-model.number="recurringForm.dayOfWeek">
-          <template x-for="(d, i) in ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']" :key="i">
+          <template x-for="(d,i) in ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']" :key="i">
             <option :value="i" x-text="d"></option>
           </template>
         </select>
       </div>
-
-      <div class="settings-row" style="background:var(--raised);margin-bottom:1rem">
+      <div class="settings-row" style="background:var(--raised);border-radius:12px;margin-bottom:1rem">
         <div>
           <div class="label">Auto-log silently</div>
-          <div class="sub">Log automatically on app open (no prompt)</div>
+          <div class="sub">Log on app open without prompting</div>
         </div>
         <label class="toggle">
           <input type="checkbox" x-model="recurringForm.autoLog">
           <span class="toggle-slider"></span>
         </label>
       </div>
-
       <div class="btn-row">
         <button class="btn btn-ghost" @click="showAddRecurring=false">Cancel</button>
         <button class="btn btn-primary" @click="saveRecurring()">Save</button>
@@ -802,11 +772,10 @@
     </div>
   </div>
 
-</div>
+</div><!-- #app -->
 
-<!-- Loading spinner -->
-<div x-show="loading" style="display:flex;align-items:center;justify-content:center;height:100vh">
-  <div style="color:var(--muted);font-size:1.2rem">Loading…</div>
+<div x-show="loading" style="display:flex;align-items:center;justify-content:center;height:100vh;background:var(--bg)">
+  <div style="color:var(--muted);font-size:1rem">Loading…</div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/dayjs@1.11.10/dayjs.min.js"></script>
