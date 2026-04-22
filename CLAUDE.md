@@ -2,6 +2,12 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Git workflow
+
+After every meaningful change — completed feature, fix, or significant edit — stage the relevant files, write a clean imperative-mood commit message (subject line ≤72 chars), and push to `origin main`. Do this automatically without waiting to be asked. GitHub Pages auto-deploys on push, so the live app at `https://nicolas-zg.github.io/budget-tracker-pwa/budget/` always reflects the latest commit.
+
+The goal is that no work is ever lost and any state can be reverted via git history.
+
 ## Development
 
 No build step — this is a vanilla JS PWA. To run locally:
@@ -14,8 +20,6 @@ python3 -m http.server 8765
 
 Service workers require HTTPS, so PWA install/offline features only work on the deployed GitHub Pages URL:
 `https://nicolas-zg.github.io/budget-tracker-pwa/budget/`
-
-After every meaningful change, commit with a clean imperative-mood message and push to `origin main`. GitHub Pages auto-deploys on push.
 
 ## Architecture
 
