@@ -2,6 +2,10 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Code quality
+
+Always write efficient, performant solutions — both technically (minimal reflows, no redundant DB reads, O(n) over O(n²) where it matters) and visibly (snappy interactions, no layout shift, smooth animations). If there's a tradeoff between a simpler approach and a noticeably faster one, prefer the faster one and note why.
+
 ## Git workflow
 
 After every meaningful change — completed feature, fix, or significant edit — stage the relevant files, write a clean imperative-mood commit message (subject line ≤72 chars), and push to `origin main`. Do this automatically without waiting to be asked. GitHub Pages auto-deploys on push, so the live app at `https://nicolas-zg.github.io/budget-tracker-pwa/budget/` always reflects the latest commit.
